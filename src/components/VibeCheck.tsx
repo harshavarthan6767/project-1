@@ -27,10 +27,7 @@ export default function VibeCheckSection({ data }: Props) {
 
         {/* Aura */}
         <div className="card-glass p-6 mb-6 bg-gradient-to-r from-white/[0.02] to-white/[0.04]">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-2xl">{vibe.auraEmoji}</span>
-            <span className="text-xs text-zinc-500 uppercase tracking-wider">Your Aura</span>
-          </div>
+          <span className="text-xs text-zinc-500 uppercase tracking-wider">Your Aura</span>
           <p className="text-lg text-white font-medium leading-relaxed">{vibe.aura}</p>
         </div>
 
