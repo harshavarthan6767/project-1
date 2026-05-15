@@ -26,7 +26,7 @@ function computeTraits(
   tracks: SpotifyTrack[],
   features: SpotifyAudioFeatures[],
 ): Record<string, number> {
-  const validFeatures = features.filter((f) => f !== null);
+  const validFeatures = features.filter((f) => f !== null && f.energy > 0);
   const hasAudio = validFeatures.length > 0;
 
   // Use genre-based estimates when audio features are sparse
@@ -224,22 +224,19 @@ export function analyzeMusicProfile(
   const traits = computeTraits(artists, tracks, features);
   const archetype = findBestArchetype(traits);
 
-  const validFeatures = features.filter((f) => f !== null);
+  const validFeatures = features.filter((f) => f !== null && f.energy > 0);
   const hasAudioFeatures = validFeatures.length > 0;
   const estimates = hasAudioFeatures ? null : estimateFromGenres(artists);
 
   const avgPopularity = artists.length > 0
     ? Math.round(artists.reduce((s, a) => s + a.popularity, 0) / artists.length)
     : 0;
-  const avgEnergy = hasAudioFeatures
-    ? Math.round((validFeatures.reduce((s, f) => s + f.energy, 0) / validFeatures.length) * 100)
-    : (estimates?.energy ?? 50);
+  // Use trait values directly — they already have proper fallback logic
+  const avgEnergy = traits.energy;
   const avgDanceability = hasAudioFeatures
     ? Math.round((validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length) * 100)
     : (estimates?.danceability ?? 50);
-  const avgValence = hasAudioFeatures
-    ? Math.round((validFeatures.reduce((s, f) => s + f.valence, 0) / validFeatures.length) * 100)
-    : (estimates?.valence ?? 50);
+  const avgValence = traits.emotion;
   const avgTempo = hasAudioFeatures
     ? Math.round(validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length)
     : (estimates?.tempo ?? 120);
