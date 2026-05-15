@@ -227,15 +227,31 @@ export default function ResultsPage() {
       <DiagonalDivider />
 
       {/* ═══ GENRE RING ═══ */}
-      <Section className="max-w-2xl mx-auto px-6 py-20">
-        <div className="mb-8">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500 mb-3">Genre Landscape</p>
-          <h2 className="text-4xl sm:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-righteous)" }}>
-            Your Sound Map
-          </h2>
-        </div>
-        <GenreRing genres={topGenres} visible />
-      </Section>
+      {topGenres.length > 0 ? (
+        <Section className="max-w-2xl mx-auto px-6 py-20">
+          <div className="mb-8">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500 mb-3">Genre Landscape</p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-righteous)" }}>
+              Your Sound Map
+            </h2>
+          </div>
+          <GenreRing genres={topGenres} visible />
+        </Section>
+      ) : (
+        <Section className="max-w-2xl mx-auto px-6 py-20">
+          <div className="mb-8">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500 mb-3">Genre Landscape</p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-righteous)" }}>
+              Your Sound Map
+            </h2>
+          </div>
+          <div className="backdrop-blur-xl bg-white/[0.02] border border-white/[0.06] rounded-xl p-8 text-center">
+            <p className="text-zinc-400 text-sm leading-relaxed">
+              Spotify doesn&apos;t provide genre tags for your top artists yet — this is common for regional and independent music. Your listening profile is still fully analyzed from your artist and track data.
+            </p>
+          </div>
+        </Section>
+      )}
 
       <DiagonalDivider />
 
