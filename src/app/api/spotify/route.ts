@@ -93,29 +93,47 @@ export async function GET(request: NextRequest) {
     let aiGenres: { name: string; count: number }[] | null = null;
     const stillGenreless = artists.some((a) => !a.genres || a.genres.length === 0);
     if (stillGenreless) {
-      // Try AI first if key available
-      if (process.env.ANTHROPIC_API_KEY) {
+      // Try AI first — Gemini (free), OpenRouter (free models), or Anthropic
+      const aiKey = process.env.GEMINI_API_KEY || process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY;
+      if (aiKey) {
         try {
           const names = artists.map((a) => a.name).join(", ");
-          const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-api-key": process.env.ANTHROPIC_API_KEY,
-              "anthropic-version": "2023-06-01",
-            },
-            body: JSON.stringify({
-              model: "claude-haiku-4-5-20251001",
-              max_tokens: 300,
-              messages: [{
-                role: "user",
-                content: `You are a music genre expert. Given this list of artists, categorize them into 6-8 genre buckets.\n\nArtists: ${names}\n\nReply ONLY with valid JSON, no explanation, no markdown:\n[{"name": "Genre Name", "count": N}, ...]\n\nRules:\n- count = number of artists that fit that genre\n- Use specific genre names (e.g. "Tamil Pop", "K-Pop", "Afrobeats", "Drill") not vague ones\n- Every artist must be counted in exactly one genre\n- Max 8 genres`,
-              }],
-            }),
-          });
-          const aiData = await aiRes.json();
-          const text = aiData.content?.[0]?.text ?? "[]";
-          aiGenres = JSON.parse(text).filter((g: { name: string; count: number }) => g.count > 0);
+          const prompt = `Categorize these artists into 6-8 genre buckets. Reply ONLY valid JSON, no explanation:\n[{"name":"Genre","count":N},...]\n\nArtists: ${names}\n\nUse specific names like "Tamil Pop","K-Pop","Afrobeats","Drill". Every artist in exactly one genre. Max 8.`;
+
+          if (process.env.OPENROUTER_API_KEY) {
+            // OpenRouter — use free Google Gemini Flash model
+            const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` },
+              body: JSON.stringify({ model: "google/gemini-2.0-flash-001", max_tokens: 300, temperature: 0.2, messages: [{ role: "user", content: prompt }] }),
+            });
+            const aiData = await aiRes.json();
+            const text = aiData.choices?.[0]?.message?.content ?? "[]";
+            aiGenres = JSON.parse(text.replace(/```json|```/g, "").trim()).filter((g: { name: string; count: number }) => g.count > 0);
+          } else if (process.env.GEMINI_API_KEY) {
+            // Google Gemini free tier
+            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { maxOutputTokens: 300, temperature: 0.2 },
+              }),
+            });
+            const aiData = await aiRes.json();
+            const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+            aiGenres = JSON.parse(text.replace(/```json|```/g, "").trim()).filter((g: { name: string; count: number }) => g.count > 0);
+          } else {
+            // Anthropic fallback
+            const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": aiKey, "anthropic-version": "2023-06-01" },
+              body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 300, messages: [{ role: "user", content: prompt }] }),
+            });
+            const aiData = await aiRes.json();
+            const text = aiData.content?.[0]?.text ?? "[]";
+            aiGenres = JSON.parse(text).filter((g: { name: string; count: number }) => g.count > 0);
+          }
         } catch { /* will use data-driven fallback below */ }
       }
 
