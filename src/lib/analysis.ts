@@ -27,25 +27,27 @@ function computeTraits(
   features: SpotifyAudioFeatures[],
 ): Record<string, number> {
   const validFeatures = features.filter((f) => f !== null);
+  const hasAudio = validFeatures.length > 0;
 
-  // Energy: from audio features + popularity
-  const avgEnergy = validFeatures.length > 0
-    ? validFeatures.reduce((s, f) => s + f.energy, 0) / validFeatures.length
-    : 0.5;
+  // Use genre-based estimates when audio features are sparse
+  const estimates = hasAudio ? null : estimateFromGenres(artists);
 
-  // Obscurity: inverse of artist popularity
+  // Obscurity: inverse of average artist popularity
   const avgPopularity = artists.length > 0
     ? artists.reduce((s, a) => s + a.popularity, 0) / artists.length
     : 50;
   const obscurity = Math.round(100 - avgPopularity);
 
-  // Curiosity: genre diversity
+  // Curiosity: genre diversity + artist variety
   const allGenres = new Set<string>();
   artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
-  const genreDiversity = allGenres.size;
-  const curiosity = Math.min(100, Math.round(genreDiversity * 3.5));
+  const genreCount = allGenres.size;
+  // If no genre data, estimate from artist count (more artists = more curious)
+  const curiosity = genreCount > 0
+    ? Math.min(100, Math.round(genreCount * 3.5))
+    : Math.min(100, Math.round(30 + artists.length * 0.8));
 
-  // Nostalgia: based on track release dates
+  // Nostalgia: average track release age
   const currentYear = new Date().getFullYear();
   const avgYear = tracks.length > 0
     ? tracks.reduce((s, t) => s + parseInt(t.album.release_date.substring(0, 4)), 0) / tracks.length
@@ -53,39 +55,46 @@ function computeTraits(
   const avgAge = currentYear - avgYear;
   const nostalgia = Math.min(100, Math.round(avgAge * 5));
 
-  // Emotion: from valence (inverted - sad songs have low valence) + acousticness
-  const avgValence = validFeatures.length > 0
+  // Energy: audio features or estimate
+  const rawEnergy = hasAudio
+    ? validFeatures.reduce((s, f) => s + f.energy, 0) / validFeatures.length
+    : (estimates ? estimates.energy / 100 : 0.5);
+  const rawDance = hasAudio
+    ? validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length
+    : (estimates ? estimates.danceability / 100 : 0.5);
+  const rawTempo = hasAudio
+    ? validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length
+    : (estimates ? estimates.tempo : 120);
+  const energy = Math.round(rawEnergy * 60 + rawDance * 20 + Math.min(20, (rawTempo - 60) / 6));
+
+  // Emotion: from valence + acousticness, or estimate
+  const rawValence = hasAudio
     ? validFeatures.reduce((s, f) => s + f.valence, 0) / validFeatures.length
-    : 0.5;
-  const avgAcoustic = validFeatures.length > 0
+    : (estimates ? estimates.valence / 100 : 0.5);
+  const rawAcoustic = hasAudio
     ? validFeatures.reduce((s, f) => s + f.acousticness, 0) / validFeatures.length
     : 0.3;
-  const emotion = Math.round((1 - avgValence) * 60 + avgAcoustic * 40);
+  const emotion = Math.round((1 - rawValence) * 60 + rawAcoustic * 40);
 
-  // Consistency: inverse of how spread out artist listening is
-  const artistConcentration = artists.length > 0
-    ? artists.slice(0, 5).reduce((s, a) => s + a.popularity, 0) / (5 * 100)
-    : 0.5;
-  const consistency = Math.round(artistConcentration * 70 + 20);
-
-  // Energy adjusted with danceability + tempo
-  const avgDanceability = validFeatures.length > 0
-    ? validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length
-    : 0.5;
-  const avgTempo = validFeatures.length > 0
-    ? validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length
-    : 120;
-  const energy = Math.round(avgEnergy * 60 + avgDanceability * 20 + Math.min(20, (avgTempo - 60) / 6));
+  // Consistency: how concentrated is listening on top artists
+  // More variance in popularity among top 5 = less consistent
+  const top5 = artists.slice(0, 5);
+  const top5Avg = top5.length > 0
+    ? top5.reduce((s, a) => s + a.popularity, 0) / top5.length
+    : 50;
+  const consistency = Math.round((top5Avg / 100) * 50 + (1 - artists.length / 100) * 50);
 
   return {
-    energy: Math.round(Math.min(100, Math.max(0, energy))),
-    emotion: Math.round(Math.min(100, Math.max(0, emotion))),
-    curiosity: Math.round(Math.min(100, Math.max(0, curiosity))),
-    nostalgia: Math.round(Math.min(100, Math.max(0, nostalgia))),
-    obscurity: Math.round(Math.min(100, Math.max(0, obscurity))),
-    consistency: Math.round(Math.min(100, Math.max(0, consistency))),
+    energy: clamp(energy),
+    emotion: clamp(emotion),
+    curiosity: clamp(curiosity),
+    nostalgia: clamp(nostalgia),
+    obscurity: clamp(obscurity),
+    consistency: clamp(consistency),
   };
 }
+
+function clamp(v: number) { return Math.round(Math.min(100, Math.max(0, v))); }
 
 function findBestArchetype(traits: Record<string, number>): Archetype {
   let best = ARCHETYPES[0];

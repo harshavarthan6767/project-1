@@ -96,27 +96,6 @@ function DiagonalDivider() {
   );
 }
 
-/* ── Starfield particle bg ── */
-function Starfield() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {Array.from({ length: 40 }).map((_, i) => (
-        <div key={i} className="absolute rounded-full bg-white animate-pulse-glow"
-          style={{
-            width: `${1 + Math.random() * 2}px`,
-            height: `${1 + Math.random() * 2}px`,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${2 + Math.random() * 4}s`,
-            opacity: 0.15 + Math.random() * 0.35,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 /* ═══════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════ */
@@ -145,22 +124,6 @@ export default function ResultsPage() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Parallax orbs
-  const [orbOffset, setOrbOffset] = useState(0);
-  useEffect(() => {
-    let rafId: number;
-    const onScroll = () => {
-      rafId = requestAnimationFrame(() => {
-        setOrbOffset(window.scrollY * 0.3);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(rafId);
-    };
   }, []);
 
   if (!data) {
@@ -199,14 +162,8 @@ export default function ResultsPage() {
 
       {/* ═══ HERO ═══ */}
       <section ref={heroRef} className="relative min-h-dvh flex flex-col items-center justify-center px-6 overflow-hidden">
-        {/* Parallax orbs */}
-        <div className="absolute inset-0" style={{ transform: `translateY(${orbOffset * 0.5}px)`, willChange: "transform" }}>
-          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-600/8 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/8 rounded-full blur-3xl" />
-        </div>
-
-        {/* Starfield */}
-        <Starfield />
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-600/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-green-500/8 rounded-full blur-3xl" />
 
         {/* Radial glow */}
         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-3xl transition-all duration-1500 ${reveal ? "opacity-20 scale-100" : "opacity-0 scale-50"}`}
@@ -217,11 +174,10 @@ export default function ResultsPage() {
               archetype.id === "explorer" ? "#10b981" : archetype.id === "stan" ? "#ec4899" :
               archetype.id === "chill-vibes" ? "#06b6d4" : "#8b5cf6"
             } 0%, transparent 70%)`,
-            transform: `translateY(${-orbOffset * 0.3}px)`,
           }}
         />
 
-        <div className="relative z-10 text-center max-w-2xl mx-auto" style={{ transform: `translateY(${-orbOffset * 0.1}px)` }}>
+        <div className="relative z-10 text-center max-w-2xl mx-auto">
           <div className={`transition-all duration-700 ${reveal ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-500 mb-4">{archetype.label}</p>
           </div>

@@ -35,6 +35,9 @@ export default function LoadingPage() {
   }, []);
 
   useEffect(() => {
+    // Clear any stale data from previous sessions
+    sessionStorage.removeItem("musicPersonality");
+
     async function analyze() {
       try {
         const res = await fetch("/api/spotify");
