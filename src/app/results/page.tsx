@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { AnalysisResult } from "@/lib/analysis";
 import { TRAITS } from "@/lib/archetypes";
-import { getVibeCheck } from "@/lib/slang";
+import { getVibeCheck, getRegionArchetypeLabel } from "@/lib/slang";
 import GenreRing from "@/components/GenreRing";
 import PersonalityCard from "@/components/PersonalityCard";
 
@@ -155,6 +155,7 @@ export default function ResultsPage() {
   const vibe = getVibeCheck(archetype, data);
   const userName = data.userName || "";
   const displayGenres = topGenres.length > 0 ? topGenres : (data.aiGenres || []);
+  const regionLabel = getRegionArchetypeLabel(archetype.id, data) || archetype.label;
 
   // Rich gradient colors per archetype
   const archColors: Record<string, { from: string; mid: string; to: string; blob1: string; blob2: string }> = {
@@ -199,7 +200,7 @@ export default function ResultsPage() {
             {archetype.name}
           </span>
           <span className="text-[10px] uppercase tracking-widest text-zinc-600 bg-white/[0.03] px-2 py-0.5 rounded-full">
-            {archetype.label}
+            {regionLabel}
           </span>
         </div>
       </div>
@@ -223,7 +224,7 @@ export default function ResultsPage() {
 
         <div className="relative z-10 text-center max-w-2xl mx-auto">
           <div className={`transition-all duration-700 ${reveal ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-500 mb-4">{archetype.label}</p>
+            <p className="text-[11px] uppercase tracking-[0.35em] text-zinc-500 mb-4">{regionLabel}</p>
           </div>
           <div className={`transition-all duration-700 delay-150 ${reveal ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <h1 className={`text-6xl sm:text-7xl md:text-8xl font-bold leading-[0.95] mb-8 bg-gradient-to-r bg-clip-text text-transparent ${archetype.gradient}`}
@@ -398,7 +399,7 @@ export default function ResultsPage() {
           </h2>
           <p className="text-zinc-500 text-sm mt-2">Save and post it anywhere</p>
         </div>
-        <PersonalityCard data={data} userName={userName} />
+        <PersonalityCard data={data} userName={userName} regionLabel={regionLabel} />
       </Section>
 
       {/* ═══ FOOTER ═══ */}

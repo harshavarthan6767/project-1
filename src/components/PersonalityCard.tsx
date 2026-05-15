@@ -7,6 +7,7 @@ import type { AnalysisResult } from "@/lib/analysis";
 interface Props {
   data: AnalysisResult;
   userName?: string;
+  regionLabel?: string;
   showExport?: boolean;
 }
 
@@ -61,7 +62,7 @@ const GENZ_PHRASES: Record<string, string[]> = {
   ],
 };
 
-export default function PersonalityCard({ data, userName, showExport = true }: Props) {
+export default function PersonalityCard({ data, userName, regionLabel, showExport = true }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
@@ -114,7 +115,7 @@ export default function PersonalityCard({ data, userName, showExport = true }: P
               style={{ fontFamily: "var(--font-righteous)" }}>
               {archetype.name}
             </h3>
-            <p className="text-[11px] text-zinc-500 mt-1">{archetype.label}</p>
+            <p className="text-[11px] text-zinc-500 mt-1">{regionLabel || archetype.label}</p>
           </div>
 
           {/* Top Artist + Top Track */}
