@@ -62,23 +62,12 @@ function LandingContent() {
 
         {/* Feature pills */}
         <div className="animate-fade-up animate-fade-up-delay-4 flex flex-wrap justify-center gap-3 mt-16">
-          {[
-            { emoji: "\u{1F9EC}", label: "Music DNA" },
-            { emoji: "\u{1F3AD}", label: "Listening Archetype" },
-            { emoji: "\u{1F4CA}", label: "Trait Breakdown" },
-            { emoji: "\u{1F517}", label: "Shareable Card" },
-          ].map((f) => (
-            <div key={f.label} className="card-glass px-4 py-2.5 flex items-center gap-2 text-sm text-zinc-300">
-              <span>{f.emoji}</span>
-              <span>{f.label}</span>
+          {["Top Artists & Tracks", "Audio Analysis", "Listening Archetype", "Shareable Card"].map((label) => (
+            <div key={label} className="card-glass px-5 py-2.5 text-sm text-zinc-300">
+              {label}
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="absolute bottom-6 text-center text-xs text-zinc-700">
-        Built with ❤️ using Next.js & Spotify API
       </div>
     </div>
   );

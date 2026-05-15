@@ -12,8 +12,7 @@ export default function PersonalityCard({ data }: Props) {
       <div className="bg-[#0a0a0a] rounded-2xl p-6 space-y-5">
         {/* Header */}
         <div className="text-center">
-          <div className="text-4xl mb-2">{archetype.emoji}</div>
-          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Music Personality</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-[0.2em] mb-2">{archetype.label}</p>
           <h3
             className={`text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${archetype.gradient}`}
             style={{ fontFamily: "var(--font-righteous)" }}
@@ -23,23 +22,25 @@ export default function PersonalityCard({ data }: Props) {
         </div>
 
         {/* Top artists line */}
-        <div className="text-center">
-          <p className="text-xs text-zinc-600 mb-1">Featuring</p>
-          <p className="text-sm text-zinc-400">
-            {topArtists.slice(0, 3).map((a) => a.name).join(" · ")}
-          </p>
-        </div>
+        {topArtists.length > 0 && (
+          <div className="text-center">
+            <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">Featuring</p>
+            <p className="text-sm text-zinc-400">
+              {topArtists.slice(0, 3).map((a) => a.name).join("  ·  ")}
+            </p>
+          </div>
+        )}
 
         {/* Trait pills */}
         <div className="flex flex-wrap justify-center gap-1.5">
           {Object.entries(traits).map(([key, value]) => {
             const labels: Record<string, string> = {
-              energy: "⚡ Energy",
-              emotion: "💜 Emotion",
-              curiosity: "🔍 Curious",
-              nostalgia: "📻 Nostalgic",
-              obscurity: "🪐 Obscure",
-              consistency: "🎯 Loyal",
+              energy: "Energy",
+              emotion: "Depth",
+              curiosity: "Discovery",
+              nostalgia: "Nostalgia",
+              obscurity: "Underground",
+              consistency: "Loyalty",
             };
             return (
               <span
@@ -70,7 +71,7 @@ export default function PersonalityCard({ data }: Props) {
         {/* Footer */}
         <div className="text-center pt-2 border-t border-white/5">
           <p className="text-[10px] text-zinc-600">
-            musicpersonality.app · Powered by Spotify
+            musicpersonality.app &middot; Powered by Spotify
           </p>
         </div>
       </div>
