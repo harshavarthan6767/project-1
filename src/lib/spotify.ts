@@ -166,3 +166,11 @@ export async function getAudioFeatures(accessToken: string, trackIds: string[]):
 export async function getUserProfile(accessToken: string): Promise<{ display_name: string; images: { url: string }[] }> {
   return spotifyFetch("/me", accessToken);
 }
+
+export async function getRelatedArtists(accessToken: string, artistId: string): Promise<SpotifyArtist[]> {
+  const data = await spotifyFetch<{ artists: SpotifyArtist[] }>(
+    `/artists/${artistId}/related-artists`,
+    accessToken,
+  );
+  return data.artists || [];
+}

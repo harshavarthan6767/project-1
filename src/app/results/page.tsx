@@ -138,18 +138,33 @@ export default function ResultsPage() {
   const vibe = getVibeCheck(archetype);
   const userName = data.userName || "";
 
-  // Subtle page background tint from archetype color
-  const bgTint = archetype.id === "party-starter" ? "from-[#0a0a0a] via-[#1a0f08] to-[#0a0a0a]" :
-    archetype.id === "late-night-feels" ? "from-[#0a0a0a] via-[#0f0a1e] to-[#0a0a0a]" :
-    archetype.id === "hype-beast" ? "from-[#0a0a0a] via-[#1a0808] to-[#0a0a0a]" :
-    archetype.id === "classic-soul" ? "from-[#0a0a0a] via-[#140e06] to-[#0a0a0a]" :
-    archetype.id === "explorer" ? "from-[#0a0a0a] via-[#081a14] to-[#0a0a0a]" :
-    archetype.id === "stan" ? "from-[#0a0a0a] via-[#1a0816] to-[#0a0a0a]" :
-    archetype.id === "chill-vibes" ? "from-[#0a0a0a] via-[#08141a] to-[#0a0a0a]" :
-    "from-[#0a0a0a] via-[#10081e] to-[#0a0a0a]";
+  // Rich gradient colors per archetype
+  const archColors: Record<string, { from: string; mid: string; to: string; blob1: string; blob2: string }> = {
+    "party-starter": { from: "#0a0a0a", mid: "#1a0f08", to: "#0d0804", blob1: "rgba(249,115,22,0.12)", blob2: "rgba(244,63,94,0.08)" },
+    "late-night-feels": { from: "#0a0a0a", mid: "#0f0a1e", to: "#080610", blob1: "rgba(99,102,241,0.12)", blob2: "rgba(14,165,233,0.08)" },
+    "hype-beast": { from: "#0a0a0a", mid: "#1a0808", to: "#0d0404", blob1: "rgba(239,68,68,0.12)", blob2: "rgba(249,115,22,0.08)" },
+    "classic-soul": { from: "#0a0a0a", mid: "#140e06", to: "#0a0704", blob1: "rgba(245,158,11,0.12)", blob2: "rgba(234,179,8,0.08)" },
+    explorer: { from: "#0a0a0a", mid: "#081a14", to: "#040d0a", blob1: "rgba(16,185,129,0.12)", blob2: "rgba(6,182,212,0.08)" },
+    stan: { from: "#0a0a0a", mid: "#1a0816", to: "#0d040b", blob1: "rgba(236,72,153,0.12)", blob2: "rgba(244,63,94,0.08)" },
+    "chill-vibes": { from: "#0a0a0a", mid: "#08141a", to: "#040a0d", blob1: "rgba(6,182,212,0.12)", blob2: "rgba(99,102,241,0.08)" },
+    curator: { from: "#0a0a0a", mid: "#10081e", to: "#080410", blob1: "rgba(139,92,246,0.12)", blob2: "rgba(217,70,239,0.08)" },
+  };
+  const colors = archColors[archetype.id] || archColors.curator;
 
   return (
-    <div className={`bg-gradient-to-b ${bgTint}`}>
+    <div className="relative" style={{ background: `linear-gradient(180deg, ${colors.from} 0%, ${colors.mid} 35%, ${colors.to} 65%, ${colors.from} 100%)` }}>
+      {/* Ambient light blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
+        <div className="absolute w-[600px] h-[600px] rounded-full blur-[120px] animate-[float_20s_ease-in-out_infinite]"
+          style={{ background: colors.blob1, top: "-10%", left: "-15%", animationDelay: "0s" }} />
+        <div className="absolute w-[500px] h-[500px] rounded-full blur-[100px] animate-[float_25s_ease-in-out_infinite]"
+          style={{ background: colors.blob2, bottom: "-10%", right: "-10%", animationDelay: "-7s" }} />
+        <div className="absolute w-[400px] h-[400px] rounded-full blur-[90px] animate-[float_22s_ease-in-out_infinite]"
+          style={{ background: colors.blob1, top: "50%", left: "40%", animationDelay: "-14s", opacity: 0.6 }} />
+      </div>
+
+      {/* Content wrapper */}
+      <div className="relative" style={{ zIndex: 1 }}>
       {/* ── Scroll Progress Bar ── */}
       <div className="fixed top-0 left-0 right-0 h-[2px] z-50 bg-white/[0.03]">
         <div className={`h-full bg-gradient-to-r ${archetype.gradient} transition-all duration-150`}
@@ -379,6 +394,7 @@ export default function ResultsPage() {
         </button>
         <p className="text-[10px] text-zinc-700 mt-10 uppercase tracking-widest">Powered by Spotify</p>
       </section>
+    </div>
     </div>
   );
 }

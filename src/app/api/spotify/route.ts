@@ -3,6 +3,7 @@ import {
   getTopArtists,
   getTopTracks,
   getAudioFeatures,
+  getRelatedArtists,
   getUserProfile,
   refreshAccessToken,
 } from "@/lib/spotify";
@@ -47,6 +48,30 @@ export async function GET(request: NextRequest) {
         { error: "Not enough listening data. Try listening to more music on Spotify first!" },
         { status: 400 },
       );
+    }
+
+    // Enrich artists without genres by fetching related artists
+    const genreless = artists.filter((a) => !a.genres || a.genres.length === 0);
+    if (genreless.length > 0) {
+      const enriched = await Promise.all(
+        genreless.slice(0, 10).map(async (artist) => {
+          try {
+            const related = await getRelatedArtists(token, artist.id);
+            const genreSet = new Set<string>();
+            related.forEach((r) => (r.genres || []).forEach((g) => genreSet.add(g)));
+            return { ...artist, genres: [...genreSet].slice(0, 5) };
+          } catch {
+            return artist;
+          }
+        }),
+      );
+      // Merge enriched artists back
+      const enrichedMap = new Map(enriched.map((a) => [a.id, a]));
+      for (let i = 0; i < artists.length; i++) {
+        if (enrichedMap.has(artists[i].id)) {
+          artists[i] = enrichedMap.get(artists[i].id)!;
+        }
+      }
     }
 
     // Audio features — optional, don't fail if unavailable
