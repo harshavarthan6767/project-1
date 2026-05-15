@@ -3,6 +3,7 @@ import {
   getTopArtists,
   getTopTracks,
   getAudioFeatures,
+  getArtist,
   getRelatedArtists,
   getUserProfile,
   refreshAccessToken,
@@ -50,12 +51,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Enrich artists without genres by fetching related artists
+    // Enrich artists without genres — try individual endpoint first, then related artists
     const genreless = artists.filter((a) => !a.genres || a.genres.length === 0);
     if (genreless.length > 0) {
       const enriched = await Promise.all(
-        genreless.slice(0, 10).map(async (artist) => {
+        genreless.slice(0, 15).map(async (artist) => {
           try {
+            // Try individual artist endpoint first (often has genres list endpoint doesn't)
+            const single = await getArtist(token, artist.id);
+            if (single.genres && single.genres.length > 0) {
+              return { ...artist, genres: single.genres };
+            }
+            // Fall back to related artists
             const related = await getRelatedArtists(token, artist.id);
             const genreSet = new Set<string>();
             related.forEach((r) => (r.genres || []).forEach((g) => genreSet.add(g)));
@@ -65,7 +72,6 @@ export async function GET(request: NextRequest) {
           }
         }),
       );
-      // Merge enriched artists back
       const enrichedMap = new Map(enriched.map((a) => [a.id, a]));
       for (let i = 0; i < artists.length; i++) {
         if (enrichedMap.has(artists[i].id)) {

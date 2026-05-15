@@ -167,6 +167,10 @@ export async function getUserProfile(accessToken: string): Promise<{ display_nam
   return spotifyFetch("/me", accessToken);
 }
 
+export async function getArtist(accessToken: string, artistId: string): Promise<SpotifyArtist> {
+  return spotifyFetch<SpotifyArtist>(`/artists/${artistId}`, accessToken);
+}
+
 export async function getRelatedArtists(accessToken: string, artistId: string): Promise<SpotifyArtist[]> {
   const data = await spotifyFetch<{ artists: SpotifyArtist[] }>(
     `/artists/${artistId}/related-artists`,
