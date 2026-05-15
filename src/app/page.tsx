@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense } from "react";
-import { getSpotifyAuthUrl } from "@/lib/spotify";
 import { useSearchParams } from "next/navigation";
 
 function LandingContent() {
@@ -9,7 +8,7 @@ function LandingContent() {
   const error = searchParams.get("error");
 
   const handleConnect = () => {
-    window.location.href = getSpotifyAuthUrl();
+    window.location.href = "/api/auth/login";
   };
 
   return (
