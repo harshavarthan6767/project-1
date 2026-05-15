@@ -8,7 +8,7 @@ export function GET() {
     return NextResponse.json({ error: "Spotify not configured" }, { status: 500 });
   }
 
-  const scope = "user-top-read";
+  const scope = "user-top-read playlist-modify-private";
   const params = new URLSearchParams({
     client_id: clientId,
     response_type: "code",

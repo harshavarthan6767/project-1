@@ -14,8 +14,8 @@ async function fetchWithRetry(token: string, refreshToken: string) {
   // Try existing token first
   try {
     const [artists, tracks] = await Promise.all([
-      getTopArtists(token, "medium_term"),
-      getTopTracks(token, "medium_term"),
+      getTopArtists(token, "long_term"),
+      getTopTracks(token, "long_term"),
     ]);
     return { artists, tracks, token };
   } catch (err) {
@@ -24,8 +24,8 @@ async function fetchWithRetry(token: string, refreshToken: string) {
     if (msg.includes("401")) {
       const newTokens = await refreshAccessToken(refreshToken);
       const [artists, tracks] = await Promise.all([
-        getTopArtists(newTokens.access_token, "medium_term"),
-        getTopTracks(newTokens.access_token, "medium_term"),
+        getTopArtists(newTokens.access_token, "long_term"),
+        getTopTracks(newTokens.access_token, "long_term"),
       ]);
       return { artists, tracks, token: newTokens.access_token };
     }
