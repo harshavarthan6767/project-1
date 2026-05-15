@@ -8,6 +8,7 @@ function LandingContent() {
   const error = searchParams.get("error");
 
   const handleConnect = () => {
+    sessionStorage.clear();
     window.location.href = "/api/auth/login";
   };
 

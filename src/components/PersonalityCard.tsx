@@ -11,14 +11,54 @@ interface Props {
 }
 
 const GENZ_PHRASES: Record<string, string[]> = {
-  curator: ["no skips, all deep cuts", "algorithm said 'idk you tell me'", "playlist is a museum fr"],
-  "party-starter": ["letting the aux cook", "the function don't start til u walk in", "understood the assignment"],
-  "late-night-feels": ["in your feels era", "sad boi hours certified", "2am ceiling stare playlist"],
-  "hype-beast": ["going absolutely feral rn", "this goes unbelievably hard", "head empty just bass"],
-  "classic-soul": ["they don't make em like this anymore", "old head energy new gen respect", "vintage vibes only"],
-  explorer: ["genre? never heard of her", "algorithm in shambles", "collecting sounds like pokemon"],
-  stan: ["casual listening not found", "committed to the deep catalog", "the dedication is impressive"],
-  "chill-vibes": ["vibes are curated not captured", "the chill is actually profound", "in your zen bag"],
+  curator: [
+    "gatekeeping is self-care fr fr",
+    "your discover weekly has actual rizz",
+    "chronically online music taste (complimentary)",
+    "you find artists before they're cool, then get the ick when they blow up",
+  ],
+  "party-starter": [
+    "letting the aux cook (5-star meal, no crumbs)",
+    "the function don't start til u walk in, no cap",
+    "POV: you have the aux and everyone's life just got better",
+    "actually understood the assignment — then ate and left no evidence",
+  ],
+  "late-night-feels": [
+    "in your sad boi/girl era and honestly? slaying",
+    "this playlist hits different at 2am",
+    "me when the beat drops and suddenly i'm staring at the ceiling",
+    "emotional damage but make it a banger",
+  ],
+  "hype-beast": [
+    "going absolutely feral, no thoughts just bass",
+    "this goes unbelievably hard — might ascend",
+    "if this track was a person i'd let it do my taxes",
+    "sigma grindset but it's just this song on repeat",
+  ],
+  "classic-soul": [
+    "born in the wrong generation (derogatory)",
+    "they don't make 'em like this anymore — literally, the industry fell off",
+    "POV: you're explaining why the original is better (again)",
+    "old head energy but your taste actually bussin",
+  ],
+  explorer: [
+    "genre? never heard of her. we contain multitudes",
+    "spotify algorithm in shambles trying to figure you out",
+    "your taste is giving 'i listen to everything' and you actually mean it",
+    "collecting sounds like infinity stones — each week a new obsession",
+  ],
+  stan: [
+    "casual listening? don't know her. we go DEEP",
+    "committed to the bit (the bit is this one artist)",
+    "you don't just know the hits, you know the UNRELEASED tracks",
+    "mewing to this artist's entire discography",
+  ],
+  "chill-vibes": [
+    "vibes: curated. stress: non-existent. aura: immaculate",
+    "this playlist could solve world peace, argue with the wall",
+    "the chill is actually profound — you'd have to have 200 IQ to get it",
+    "very demure, very mindful playlist choices",
+  ],
 };
 
 export default function PersonalityCard({ data, userName, showExport = true }: Props) {

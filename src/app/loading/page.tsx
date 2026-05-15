@@ -35,8 +35,8 @@ export default function LoadingPage() {
   }, []);
 
   useEffect(() => {
-    // Clear any stale data from previous sessions
-    sessionStorage.removeItem("musicPersonality");
+    // Clear stale data immediately
+    sessionStorage.clear();
 
     async function analyze() {
       try {
