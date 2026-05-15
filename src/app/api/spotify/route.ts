@@ -89,64 +89,33 @@ export async function GET(request: NextRequest) {
       // Non-fatal — analysis falls back to genre estimates
     }
 
-    // If genres are still empty after enrichment, create sound-based categories
+    // If genres are still empty after Spotify enrichment, use AI to infer them
+    let aiGenres: { name: string; count: number }[] | null = null;
     const stillGenreless = artists.some((a) => !a.genres || a.genres.length === 0);
-    if (stillGenreless) {
-      const validFeats = features.filter((f) => f !== null && f.energy !== undefined);
-      const hasAudio = validFeats.length > 0 &&
-        validFeats.reduce((s, f) => s + f.energy, 0) / validFeats.length > 0.01;
-
-      // Build sound-based genre labels from audio features or popularity
-      const soundGenres: string[] = [];
-
-      if (hasAudio) {
-        const avgE = validFeats.reduce((s, f) => s + f.energy, 0) / validFeats.length;
-        const avgD = validFeats.reduce((s, f) => s + f.danceability, 0) / validFeats.length;
-        const avgV = validFeats.reduce((s, f) => s + f.valence, 0) / validFeats.length;
-        const avgA = validFeats.reduce((s, f) => s + f.acousticness, 0) / validFeats.length;
-        const avgT = validFeats.reduce((s, f) => s + f.tempo, 0) / validFeats.length;
-
-        if (avgE > 0.7 && avgD > 0.6) soundGenres.push("Party Anthems");
-        else if (avgE > 0.7) soundGenres.push("High Energy");
-        else if (avgE < 0.35 && avgA > 0.5) soundGenres.push("Acoustic Sessions");
-        else if (avgE < 0.35) soundGenres.push("Downtempo");
-
-        if (avgV > 0.7) soundGenres.push("Feel Good Hits");
-        else if (avgV < 0.3) soundGenres.push("Moody & Deep");
-
-        if (avgT > 130) soundGenres.push("Fast Paced");
-        else if (avgT < 90) soundGenres.push("Slow Jams");
-        else soundGenres.push("Mid Tempo");
-
-        if (avgD > 0.7) soundGenres.push("Dance Floor Ready");
-        if (avgA > 0.6) soundGenres.push("Stripped Down");
-      }
-
-      // Add popularity-based categories
-      const avgPop = artists.reduce((s, a) => s + (a.popularity ?? 50), 0) / artists.length;
-      if (avgPop < 40) soundGenres.push("Underground Picks");
-      else if (avgPop > 70) soundGenres.push("Mainstream Hits");
-      else soundGenres.push("Rising Stars");
-
-      // Add decade category
-      const years = tracks.map((t) => parseInt((t.album?.release_date || "2020").substring(0, 4))).filter((y) => !isNaN(y));
-      const avgYear = years.length > 0 ? years.reduce((s, y) => s + y, 0) / years.length : 2020;
-      if (avgYear < 2000) soundGenres.push("Classic Era");
-      else if (avgYear < 2015) soundGenres.push("2000s & 2010s");
-      else soundGenres.push("Current Era");
-
-      // Spread these sound genres across artists
-      if (soundGenres.length > 0) {
-        for (let i = 0; i < artists.length; i++) {
-          if (!artists[i].genres || artists[i].genres.length === 0) {
-            // Each artist gets 2-3 sound genres
-            const start = (i * 2) % soundGenres.length;
-            artists[i].genres = [
-              soundGenres[start],
-              soundGenres[(start + 1) % soundGenres.length],
-            ];
-          }
-        }
+    if (stillGenreless && process.env.ANTHROPIC_API_KEY) {
+      try {
+        const names = artists.map((a) => a.name).join(", ");
+        const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 300,
+            messages: [{
+              role: "user",
+              content: `You are a music genre expert. Given this list of artists, categorize them into 4-8 genre buckets.\n\nArtists: ${names}\n\nReply ONLY with valid JSON, no explanation, no markdown:\n[{"name": "Genre Name", "count": N}, ...]\n\nRules:\n- count = number of artists that fit that genre\n- Use specific genre names (e.g. "Tamil Pop", "K-Pop", "Afrobeats", "Drill") not vague ones\n- Every artist must be counted in exactly one genre\n- Max 8 genres`,
+            }],
+          }),
+        });
+        const aiData = await aiRes.json();
+        const text = aiData.content?.[0]?.text ?? "[]";
+        aiGenres = JSON.parse(text).filter((g: { name: string; count: number }) => g.count > 0);
+      } catch {
+        // AI fallback failed — will use empty genres gracefully
       }
     }
 
@@ -158,7 +127,7 @@ export async function GET(request: NextRequest) {
     } catch { /* non-critical */ }
 
     const result = analyzeMusicProfile(artists, tracks, features);
-    return NextResponse.json({ ...result, userName });
+    return NextResponse.json({ ...result, userName, aiGenres });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

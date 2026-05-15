@@ -137,6 +137,9 @@ export default function ResultsPage() {
   const { archetype, traits, topArtists, topTracks, topGenres, stats } = data;
   const vibe = getVibeCheck(archetype);
   const userName = data.userName || "";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const aiGenres = ((data as unknown) as Record<string, unknown>).aiGenres as { name: string; count: number }[] | null;
+  const displayGenres = topGenres.length > 0 ? topGenres : (aiGenres || []);
 
   // Rich gradient colors per archetype
   const archColors: Record<string, { from: string; mid: string; to: string; blob1: string; blob2: string }> = {
@@ -253,7 +256,7 @@ export default function ResultsPage() {
       <DiagonalDivider />
 
       {/* ═══ GENRE RING ═══ */}
-      {topGenres.length > 0 ? (
+      {displayGenres.length > 0 ? (
         <Section className="max-w-2xl mx-auto px-6 py-20">
           <div className="mb-8">
             <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500 mb-3">Genre Landscape</p>
@@ -261,7 +264,7 @@ export default function ResultsPage() {
               Your Sound Map
             </h2>
           </div>
-          <GenreRing genres={topGenres} visible />
+          <GenreRing genres={displayGenres} visible />
         </Section>
       ) : (
         <Section className="max-w-2xl mx-auto px-6 py-20">
@@ -273,7 +276,7 @@ export default function ResultsPage() {
           </div>
           <div className="backdrop-blur-xl bg-white/[0.02] border border-white/[0.06] rounded-xl p-8 text-center">
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Spotify doesn&apos;t provide genre tags for your top artists yet — this is common for regional and independent music. Your listening profile is still fully analyzed from your artist and track data.
+              Genre data unavailable for your artists. This is common for regional and independent music.
             </p>
           </div>
         </Section>
