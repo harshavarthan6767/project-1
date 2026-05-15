@@ -30,18 +30,22 @@ function getSlangEra(decade: string): SlangEra {
 }
 
 // Era-specific slang dictionaries
-const ERA_SLANG: Record<SlangEra, { intensifier: string; approval: string; vibe: string; person: string; amazing: string; cool: string }> = {
+const ERA_SLANG: Record<SlangEra, { intensifier: string; approval: string; vibe: string; person: string; amazing: string; cool: string; spotify: string; wrapped: string; blend: string }> = {
   pre2000s: {
     intensifier: "totally", approval: "righteous", vibe: "groove", person: "dude", amazing: "radical", cool: "fly",
+    spotify: "mixtape", wrapped: "cassette collection", blend: "supergroup",
   },
   "2000s": {
     intensifier: "literally", approval: "epic", vibe: "mood", person: "bestie", amazing: "legendary", cool: "iconic",
+    spotify: "iPod shuffle", wrapped: "burned CD era", blend: "collab album",
   },
   "2010s": {
     intensifier: "lowkey", approval: "lit", vibe: "wave", person: "fam", amazing: "savage", cool: "on fleek",
+    spotify: "viral playlist", wrapped: "Tumblr aesthetic", blend: "group chat playlist",
   },
   "2020s": {
-    intensifier: "no cap", approval: "bussin", vibe: "aura", person: "gang", amazing: "goated", cool: "skibidi rizz",
+    intensifier: "fr fr", approval: "ate and left no crumbs", vibe: "whole aura", person: "gang", amazing: "actually goated", cool: "the rizz is unreal",
+    spotify: "daylist went crazy", wrapped: "Spotify Wrapped is gonna air your business", blend: "blend playlist is a fever dream",
   },
 };
 
