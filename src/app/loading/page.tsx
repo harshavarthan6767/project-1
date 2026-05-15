@@ -35,7 +35,8 @@ export default function LoadingPage() {
             window.location.href = "/?error=auth_failed";
             return;
           }
-          throw new Error("Analysis failed");
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Server error (${res.status})`);
         }
         const data: AnalysisResult = await res.json();
         if ("error" in data) {
