@@ -199,10 +199,10 @@ export default function ResultsPage() {
       {/* ═══ STATS BAR (glassmorphism) ═══ */}
       <Section className="max-w-4xl mx-auto px-6 pb-16 -mt-8 relative z-10">
         <div className="grid grid-cols-4 gap-3">
-          <StatCard label="Energy" value={`${stats.avgEnergy}%`} color="#fbbf24" />
-          <StatCard label="Dance" value={`${stats.avgDanceability}%`} color="#f472b6" />
-          <StatCard label="Mood" value={`${stats.avgValence}%`} color="#a78bfa" />
-          <StatCard label="BPM" value={stats.avgTempo} color="#22d3ee" />
+          <StatCard label="Energy" value={`${stats.energy}%`} color="#fbbf24" />
+          <StatCard label="Dance" value={`${stats.dance}%`} color="#f472b6" />
+          <StatCard label="Mood" value={`${stats.mood}%`} color="#a78bfa" />
+          <StatCard label="BPM" value={stats.bpm} color="#22d3ee" />
         </div>
       </Section>
 

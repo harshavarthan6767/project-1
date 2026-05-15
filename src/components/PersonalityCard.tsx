@@ -92,9 +92,9 @@ export default function PersonalityCard({ data, showExport = true }: Props) {
           {/* Mini stats */}
           <div className="grid grid-cols-4 gap-2 pt-2 border-t border-white/[0.06]">
             {[
-              { label: "Energy", value: `${stats.avgEnergy}%` },
-              { label: "Mood", value: `${stats.avgValence}%` },
-              { label: "BPM", value: stats.avgTempo },
+              { label: "Energy", value: `${stats.energy}%` },
+              { label: "Mood", value: `${stats.mood}%` },
+              { label: "BPM", value: stats.bpm },
               { label: "Era", value: stats.topDecade },
             ].map((s) => (
               <div key={s.label} className="text-center">

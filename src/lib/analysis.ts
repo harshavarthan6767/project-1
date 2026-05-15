@@ -11,263 +11,174 @@ export interface AnalysisResult {
     totalArtists: number;
     totalTracks: number;
     avgPopularity: number;
-    avgEnergy: number;
-    avgDanceability: number;
-    avgValence: number;
-    avgTempo: number;
+    energy: number;
+    dance: number;
+    mood: number;
+    bpm: number;
     topDecade: string;
-    genreDiversity: number;
+    genreCount: number;
   };
   summary: string;
 }
 
-function computeTraits(
-  artists: SpotifyArtist[],
-  tracks: SpotifyTrack[],
-  features: SpotifyAudioFeatures[],
-): Record<string, number> {
-  const validFeatures = features.filter((f) => f !== null && f.energy > 0);
-  const hasAudio = validFeatures.length > 0;
+function clamp(v: number) { return Math.max(0, Math.min(100, Math.round(v))); }
+function safeNum(n: number, fallback = 50) { return isNaN(n) || n === null ? fallback : n; }
 
-  // Use genre-based estimates when audio features are sparse
-  const estimates = hasAudio ? null : estimateFromGenres(artists);
+/* ── Compute all 6 traits from guaranteed-available data ── */
+function computeTraits(artists: SpotifyArtist[], tracks: SpotifyTrack[]): Record<string, number> {
+  const count = artists.length || 1;
 
-  // Obscurity: inverse of average artist popularity
-  const avgPopularity = artists.length > 0
-    ? artists.reduce((s, a) => s + a.popularity, 0) / artists.length
-    : 50;
-  const obscurity = Math.round(100 - avgPopularity);
+  // Popularity metrics
+  const popularities = artists.map((a) => a.popularity ?? 50);
+  const avgPop = popularities.reduce((s, v) => s + v, 0) / count;
 
-  // Curiosity: genre diversity + artist variety
-  const allGenres = new Set<string>();
-  artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
-  const genreCount = allGenres.size;
-  // If no genre data, estimate from artist count (more artists = more curious)
+  // Obscurity: lower average popularity = more underground
+  const obscurity = clamp(100 - avgPop);
+
+  // Genre diversity — from genres if available, else estimated
+  const genreSet = new Set<string>();
+  artists.forEach((a) => (a.genres || []).forEach((g) => genreSet.add(g)));
+  const genreCount = genreSet.size;
+
+  // Curiosity: genre diversity + artist spread
   const curiosity = genreCount > 0
-    ? Math.min(100, Math.round(genreCount * 3.5))
-    : Math.min(100, Math.round(30 + artists.length * 0.8));
+    ? clamp(genreCount * 3.5)
+    : clamp(20 + count * 0.8);
 
-  // Nostalgia: average track release age
-  const currentYear = new Date().getFullYear();
-  const avgYear = tracks.length > 0
-    ? tracks.reduce((s, t) => s + parseInt(t.album.release_date.substring(0, 4)), 0) / tracks.length
-    : currentYear;
-  const avgAge = currentYear - avgYear;
-  const nostalgia = Math.min(100, Math.round(avgAge * 5));
+  // Nostalgia: from track release years
+  const now = new Date().getFullYear();
+  const years = tracks.map((t) => {
+    const y = parseInt((t.album?.release_date || String(now)).substring(0, 4));
+    return isNaN(y) ? now : y;
+  });
+  const avgYear = years.reduce((s, y) => s + y, 0) / (years.length || 1);
+  const nostalgia = clamp((now - avgYear) * 5);
 
-  // Energy: audio features or estimate
-  const rawEnergy = hasAudio
-    ? validFeatures.reduce((s, f) => s + f.energy, 0) / validFeatures.length
-    : (estimates ? estimates.energy / 100 : 0.5);
-  const rawDance = hasAudio
-    ? validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length
-    : (estimates ? estimates.danceability / 100 : 0.5);
-  const rawTempo = hasAudio
-    ? validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length
-    : (estimates ? estimates.tempo : 120);
-  const energy = Math.round(rawEnergy * 60 + rawDance * 20 + Math.min(20, (rawTempo - 60) / 6));
+  // Energy & Mood: estimated from artist popularity pattern
+  // Higher popularity = tends toward higher energy
+  const energy = clamp(30 + avgPop * 0.5);
 
-  // Emotion: from valence + acousticness, or estimate
-  const rawValence = hasAudio
-    ? validFeatures.reduce((s, f) => s + f.valence, 0) / validFeatures.length
-    : (estimates ? estimates.valence / 100 : 0.5);
-  const rawAcoustic = hasAudio
-    ? validFeatures.reduce((s, f) => s + f.acousticness, 0) / validFeatures.length
-    : 0.3;
-  const emotion = Math.round((1 - rawValence) * 60 + rawAcoustic * 40);
+  // Mood: derived from popularity spread (diverse popularity = emotional depth)
+  const popVariance = popularities.reduce((s, v) => s + Math.pow(v - avgPop, 2), 0) / count;
+  const emotion = clamp(40 + Math.sqrt(popVariance) * 1.5);
 
-  // Consistency: how concentrated is listening on top artists
-  // More variance in popularity among top 5 = less consistent
-  const top5 = artists.slice(0, 5);
-  const top5Avg = top5.length > 0
-    ? top5.reduce((s, a) => s + a.popularity, 0) / top5.length
-    : 50;
-  const consistency = Math.round((top5Avg / 100) * 50 + (1 - artists.length / 100) * 50);
+  // Consistency: how concentrated is listening
+  const top5Avg = artists.slice(0, 5).reduce((s, a) => s + (a.popularity ?? 50), 0) / Math.min(5, artists.length);
+  const consistency = clamp((top5Avg / 100) * 60 + 20);
 
   return {
-    energy: clamp(energy),
-    emotion: clamp(emotion),
-    curiosity: clamp(curiosity),
-    nostalgia: clamp(nostalgia),
-    obscurity: clamp(obscurity),
-    consistency: clamp(consistency),
+    energy: energy,
+    emotion: emotion,
+    curiosity: curiosity,
+    nostalgia: nostalgia,
+    obscurity: obscurity,
+    consistency: consistency,
   };
 }
-
-function clamp(v: number) { return Math.round(Math.min(100, Math.max(0, v))); }
 
 function findBestArchetype(traits: Record<string, number>): Archetype {
   let best = ARCHETYPES[0];
   let bestScore = Infinity;
-
-  for (const archetype of ARCHETYPES) {
-    let distance = 0;
-    for (const [key, value] of Object.entries(traits)) {
-      const archValue = archetype.traits[key] || 50;
-      distance += Math.pow(value - archValue, 2);
+  for (const a of ARCHETYPES) {
+    let d = 0;
+    for (const [k, v] of Object.entries(traits)) {
+      d += Math.pow(v - (a.traits[k] ?? 50), 2);
     }
-    if (distance < bestScore) {
-      bestScore = distance;
-      best = archetype;
-    }
+    if (d < bestScore) { bestScore = d; best = a; }
   }
-
   return best;
 }
 
 function getTopDecade(tracks: SpotifyTrack[]): string {
-  const decadeCount: Record<string, number> = {};
+  const bins: Record<string, number> = {};
   tracks.forEach((t) => {
-    const year = parseInt(t.album.release_date.substring(0, 4));
-    const decade = `${Math.floor(year / 10) * 10}s`;
-    decadeCount[decade] = (decadeCount[decade] || 0) + 1;
+    const y = parseInt((t.album?.release_date || "2020").substring(0, 4));
+    if (isNaN(y)) return;
+    const decade = `${Math.floor(y / 10) * 10}s`;
+    bins[decade] = (bins[decade] || 0) + 1;
   });
-
-  let top = "2020s";
-  let max = 0;
-  for (const [decade, count] of Object.entries(decadeCount)) {
-    if (count > max) {
-      max = count;
-      top = decade;
-    }
-  }
+  let top = "2020s"; let max = 0;
+  for (const [d, c] of Object.entries(bins)) { if (c > max) { max = c; top = d; } }
   return top;
 }
 
 function getTopGenres(artists: SpotifyArtist[]): { name: string; count: number }[] {
-  const genreCount: Record<string, number> = {};
+  const map: Record<string, number> = {};
   artists.forEach((a) => {
     (a.genres || []).forEach((g) => {
-      genreCount[g] = (genreCount[g] || 0) + 1;
+      if (g) map[g] = (map[g] || 0) + 1;
     });
   });
-
-  return Object.entries(genreCount)
+  return Object.entries(map)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8)
     .map(([name, count]) => ({ name, count }));
 }
 
 function generateSummary(archetype: Archetype, traits: Record<string, number>): string {
-  const traitDescriptions = Object.entries(traits)
-    .filter(([, v]) => v > 70)
-    .map(([k]) => k);
-
-  const highTraits = traitDescriptions.map((t) => {
-    const labels: Record<string, string> = {
-      energy: "high-energy bangers",
-      emotion: "deep emotional connection",
-      curiosity: "boundless musical curiosity",
-      nostalgia: "a love for the classics",
-      obscurity: "an ear for hidden gems",
-      consistency: "deep artist loyalty",
-    };
-    return labels[t] || t;
-  });
-
-  const parts = [
-    `You're **${archetype.name}** — ${archetype.description.split(".")[0]}.`,
-    highTraits.length > 0
-      ? `Your signature is ${highTraits.slice(0, 3).join(", ")}.`
-      : "",
-  ].filter(Boolean);
-
-  return parts.join(" ");
-}
-
-function estimateFromGenres(artists: SpotifyArtist[]): {
-  energy: number; danceability: number; valence: number; tempo: number;
-} {
-  const highEnergy = new Set(["edm", "dance", "electronic", "house", "techno", "drum-and-bass", "dubstep", "hardstyle", "trance", "party", "club", "pop", "hip-hop", "rap", "trap", "rock", "metal", "punk", "hardcore", "heavy-metal", "death-metal", "industrial", "grime", "drill", "dancehall", "reggaeton", "funk", "disco", "samba"]);
-  const lowEnergy = new Set(["ambient", "classical", "acoustic", "lo-fi", "chill", "folk", "singer-songwriter", "piano", "orchestra", "new-age", "meditation", "sleep", "downtempo", "trip-hop", "shoegaze", "dream-pop", "slowcore"]);
-  const happyGenres = new Set(["pop", "dance", "disco", "funk", "reggae", "latin", "afrobeats", "samba", "salsa", "k-pop", "j-pop", "indie-pop", "synth-pop", "bubblegum", "soca", "calypso"]);
-  const sadGenres = new Set(["blues", "emo", "post-rock", "sad", "dark-ambient", "doom-metal", "gothic", "slowcore", "breakup", "melancholy"]);
-  const highDance = new Set(["dance", "disco", "funk", "house", "techno", "afrobeats", "latin", "reggaeton", "salsa", "samba", "dancehall", "drum-and-bass", "edm", "club", "party", "tropical", "merengue", "bhangra", "soca"]);
-  const fastTempo = new Set(["drum-and-bass", "punk", "hardcore", "metal", "speed-metal", "techno", "grime", "drill", "samba", "happy-hardcore", "gabber", "thrash"]);
-  const slowTempo = new Set(["ambient", "drone", "doom-metal", "classical", "orchestra", "piano", "ballad", "slow-jam", "r-b", "soul", "blues", "lo-fi", "chill"]);
-
-  let eCount = 0, eTotal = 0;
-  let dCount = 0, dTotal = 0;
-  let vCount = 0, vTotal = 0;
-  let tCount = 0, tTotal = 0;
-
-  artists.forEach((a) => {
-    const genres = (a.genres || []).map((g) => g.toLowerCase());
-    genres.forEach((g) => {
-      if (highEnergy.has(g)) { eTotal += 80; eCount++; }
-      else if (lowEnergy.has(g)) { eTotal += 25; eCount++; }
-      if (highDance.has(g)) { dTotal += 80; dCount++; }
-      if (happyGenres.has(g)) { vTotal += 75; vCount++; }
-      else if (sadGenres.has(g)) { vTotal += 25; vCount++; }
-      if (fastTempo.has(g)) { tTotal += 140; tCount++; }
-      else if (slowTempo.has(g)) { tTotal += 75; tCount++; }
-    });
-  });
-
-  const popBoost = artists.length > 0
-    ? Math.round(artists.reduce((s, a) => s + a.popularity, 0) / artists.length)
-    : 50;
-
-  return {
-    energy: eCount > 0 ? Math.round(eTotal / eCount) : Math.round(30 + popBoost * 0.5),
-    danceability: dCount > 0 ? Math.round(dTotal / dCount) : Math.round(35 + popBoost * 0.45),
-    valence: vCount > 0 ? Math.round(vTotal / vCount) : Math.round(40 + popBoost * 0.4),
-    tempo: tCount > 0 ? Math.round(tTotal / tCount) : Math.round(90 + popBoost * 0.5),
+  const labels: Record<string, string> = {
+    energy: "high-energy bangers", emotion: "deep emotional connection",
+    curiosity: "boundless musical curiosity", nostalgia: "a love for the classics",
+    obscurity: "an ear for hidden gems", consistency: "deep artist loyalty",
   };
+  const high = Object.entries(traits)
+    .filter(([, v]) => v > 70)
+    .map(([k]) => labels[k] || k);
+  return [
+    `You're **${archetype.name}** — ${archetype.description.split(".")[0]}.`,
+    high.length > 0 ? `Your signature is ${high.slice(0, 3).join(", ")}.` : "",
+  ].filter(Boolean).join(" ");
 }
 
+/* ── Main entry point ── */
 export function analyzeMusicProfile(
   artists: SpotifyArtist[],
   tracks: SpotifyTrack[],
-  features: SpotifyAudioFeatures[],
+  _features: SpotifyAudioFeatures[], // accepted but not relied on — unreliable from Spotify API
 ): AnalysisResult {
-  const traits = computeTraits(artists, tracks, features);
+  // Safe defaults
+  if (!artists?.length) {
+    return {
+      archetype: ARCHETYPES[0],
+      traits: { energy: 50, emotion: 50, curiosity: 50, nostalgia: 50, obscurity: 50, consistency: 50 },
+      topArtists: [], topTracks: [], topGenres: [],
+      stats: { totalArtists: 0, totalTracks: 0, avgPopularity: 0, energy: 50, dance: 50, mood: 50, bpm: 120, topDecade: "2020s", genreCount: 0 },
+      summary: "Connect your Spotify to discover your music personality.",
+    };
+  }
+
+  const traits = computeTraits(artists, tracks);
   const archetype = findBestArchetype(traits);
 
-  const validFeatures = features.filter((f) => f !== null && f.energy > 0);
-  const hasAudioFeatures = validFeatures.length > 0;
-  const estimates = hasAudioFeatures ? null : estimateFromGenres(artists);
-
-  const avgPopularity = artists.length > 0
-    ? Math.round(artists.reduce((s, a) => s + a.popularity, 0) / artists.length)
-    : 0;
-  // Use trait values directly — they already have proper fallback logic
-  const avgEnergy = traits.energy;
-  const avgDanceability = hasAudioFeatures
-    ? Math.round((validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length) * 100)
-    : (estimates?.danceability ?? 50);
-  const avgValence = traits.emotion;
-  const avgTempo = hasAudioFeatures
-    ? Math.round(validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length)
-    : (estimates?.tempo ?? 120);
-
-  const allGenres = new Set<string>();
-  artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
+  // Stats — all derived from guaranteed data, no audio features dependency
+  const avgPopularity = Math.round(artists.reduce((s, a) => s + (a.popularity ?? 50), 0) / artists.length);
+  const genreSet = new Set<string>();
+  artists.forEach((a) => (a.genres || []).forEach((g) => { if (g) genreSet.add(g); }));
 
   return {
     archetype,
     traits,
     topArtists: artists.slice(0, 5).map((a) => ({
-      name: a.name,
-      image: a.images[0]?.url || "",
+      name: a.name || "Unknown",
+      image: a.images?.[0]?.url || "",
       genres: (a.genres || []).slice(0, 3),
     })),
     topTracks: tracks.slice(0, 5).map((t) => ({
-      name: t.name,
-      artist: t.artists[0]?.name || "",
-      image: t.album.images[0]?.url || "",
+      name: t.name || "Unknown",
+      artist: t.artists?.[0]?.name || "",
+      image: t.album?.images?.[0]?.url || "",
     })),
     topGenres: getTopGenres(artists),
     stats: {
       totalArtists: artists.length,
       totalTracks: tracks.length,
       avgPopularity,
-      avgEnergy,
-      avgDanceability,
-      avgValence,
-      avgTempo,
+      energy: traits.energy,
+      dance: clamp(40 + avgPopularity * 0.4),
+      mood: traits.emotion,
+      bpm: 100 + Math.round(avgPopularity * 0.5),
       topDecade: getTopDecade(tracks),
-      genreDiversity: allGenres.size,
+      genreCount: genreSet.size,
     },
     summary: generateSummary(archetype, traits),
   };
