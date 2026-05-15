@@ -330,14 +330,18 @@ export default function ResultsPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-zinc-600 mb-4">Top Tracks</p>
             <div className="space-y-1.5">
               {topTracks.map((t, i) => (
-                <div key={t.name} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors group">
+                <a key={t.name}
+                  href={t.id ? `https://open.spotify.com/track/${t.id}` : undefined}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.04] transition-colors group cursor-pointer">
                   <span className="text-zinc-600 text-xs w-5 tabular-nums font-medium">{String(i + 1).padStart(2, "0")}</span>
                   <ImageWithSkeleton src={t.image} alt={t.name} className="w-10 h-10 rounded-lg" />
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-medium text-sm truncate group-hover:text-green-400 transition-colors">{t.name}</p>
                     <p className="text-zinc-600 text-xs truncate">{t.artist}</p>
                   </div>
-                </div>
+                  <svg className="w-3.5 h-3.5 text-zinc-700 group-hover:text-green-400 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                </a>
               ))}
             </div>
           </div>
