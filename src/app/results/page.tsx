@@ -5,53 +5,52 @@ import { useRouter } from "next/navigation";
 import type { AnalysisResult } from "@/lib/analysis";
 import { TRAITS } from "@/lib/archetypes";
 import { getVibeCheck } from "@/lib/slang";
-import { useScrollReveal } from "@/lib/useScrollReveal";
 import GenreRing from "@/components/GenreRing";
 import PersonalityCard from "@/components/PersonalityCard";
 
 /* ── Section wrapper ── */
-function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const { ref, visible } = useScrollReveal(0.1);
+function Section({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   return (
-    <section ref={ref} className={`transition-all duration-700 ease-out ${className}`}
-      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(32px)" }}>
+    <section className={`animate-fade-up ${className}`}
+      style={{ animationDelay: `${delay}ms`, opacity: 0 }}>
       {children}
     </section>
   );
 }
 
-/* ── Stat card with glass morphism ── */
+/* ── Stat card with glass morphism + count-up animation ── */
 function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   const [counted, setCounted] = useState(0);
-  const { ref, visible } = useScrollReveal(0.3);
   const numVal = typeof value === "string" ? parseInt(value) : value;
 
   useEffect(() => {
-    if (!visible || isNaN(numVal)) return;
-    let animId: number;
-    const start = performance.now();
-    const duration = 800;
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setCounted(Math.round(numVal * eased));
-      if (progress < 1) animId = requestAnimationFrame(tick);
-    };
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
-  }, [visible, numVal]);
+    if (isNaN(numVal)) return;
+    const timer = setTimeout(() => {
+      let animId: number;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const p = Math.min((now - start) / 800, 1);
+        setCounted(Math.round(numVal * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) animId = requestAnimationFrame(tick);
+      };
+      animId = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(animId);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [numVal]);
 
-  const displayVal = typeof value === "string" ? `${visible ? counted : 0}%` : (label === "BPM" ? (visible ? value : "...") : (visible ? counted : 0));
+  const displayVal = typeof value === "string"
+    ? `${counted}%`
+    : (label === "BPM" ? value : counted);
 
   return (
-    <div ref={ref} className="relative group">
+    <div className="relative group">
       <div className="backdrop-blur-xl bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 sm:p-5 text-center
                       hover:bg-white/[0.04] hover:border-white/[0.1] transition-all duration-300">
         <div className="absolute inset-x-0 top-0 h-px opacity-50 rounded-xl"
           style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
-        <div className={`text-2xl sm:text-3xl font-bold text-white tabular-nums ${visible && counted === numVal ? "animate-pulse-glow" : ""}`}
-          style={{ fontFamily: "var(--font-righteous)", animationDuration: "0.6s" }}>
+        <div className="text-2xl sm:text-3xl font-bold text-white tabular-nums"
+          style={{ fontFamily: "var(--font-righteous)" }}>
           {displayVal}
         </div>
         <div className="text-[10px] sm:text-xs text-zinc-500 mt-1 uppercase tracking-widest">{label}</div>
@@ -60,21 +59,26 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
   );
 }
 
-/* ── Trait bar with spring feel ── */
+/* ── Trait bar with spring animation ── */
 function TraitBar({ label, color, value, description, delay = 0 }: {
   label: string; color: string; value: number; description: string; delay?: number;
 }) {
-  const { ref, visible } = useScrollReveal(0.1);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setWidth(value), 200 + delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
   return (
-    <div ref={ref} className="space-y-2" style={{ transitionDelay: `${delay}ms` }}>
+    <div className="space-y-2">
       <div className="flex items-end justify-between">
         <span className="text-white font-semibold text-sm">{label}</span>
-        <span className="text-zinc-400 text-sm tabular-nums font-medium">{visible ? value : 0}%</span>
+        <span className="text-zinc-400 text-sm tabular-nums font-medium">{width}%</span>
       </div>
       <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-1000"
           style={{
-            width: `${visible ? value : 0}%`,
+            width: `${width}%`,
             background: `linear-gradient(90deg, ${color}66, ${color})`,
             boxShadow: `0 0 14px ${color}33`,
             transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
@@ -103,9 +107,9 @@ export default function ResultsPage() {
   const router = useRouter();
   const [data, setData] = useState<AnalysisResult | null>(null);
   const [reveal, setReveal] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("musicPersonality");
@@ -114,16 +118,29 @@ export default function ResultsPage() {
     setTimeout(() => setReveal(true), 150);
   }, [router]);
 
-  // Scroll progress + sticky header
+  // Scroll progress (DOM-based, no re-render) + sticky header (throttled)
   useEffect(() => {
+    let rafId: number;
+    let lastSticky = false;
     const onScroll = () => {
-      const h = document.documentElement;
-      const total = h.scrollHeight - h.clientHeight;
-      setScrollProgress(total > 0 ? h.scrollTop / total : 0);
-      setShowStickyHeader(h.scrollTop > window.innerHeight * 0.7);
+      // Update progress bar directly via DOM — avoids React re-renders
+      if (progressRef.current) {
+        const h = document.documentElement;
+        const total = h.scrollHeight - h.clientHeight;
+        const pct = total > 0 ? (h.scrollTop / total) * 100 : 0;
+        progressRef.current.style.width = `${pct}%`;
+      }
+      // Sticky header — throttled via rAF, only when value changes
+      if (!rafId) {
+        rafId = requestAnimationFrame(() => {
+          const sticky = document.documentElement.scrollTop > window.innerHeight * 0.7;
+          if (sticky !== lastSticky) { setShowStickyHeader(sticky); lastSticky = sticky; }
+          rafId = 0;
+        });
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => { window.removeEventListener("scroll", onScroll); if (rafId) cancelAnimationFrame(rafId); };
   }, []);
 
   if (!data) {
@@ -168,10 +185,10 @@ export default function ResultsPage() {
 
       {/* Content wrapper */}
       <div className="relative" style={{ zIndex: 1 }}>
-      {/* ── Scroll Progress Bar ── */}
+      {/* ── Scroll Progress Bar (DOM-updated, no React re-render) ── */}
       <div className="fixed top-0 left-0 right-0 h-[2px] z-50 bg-white/[0.03]">
-        <div className={`h-full bg-gradient-to-r ${archetype.gradient} transition-all duration-150`}
-          style={{ width: `${scrollProgress * 100}%` }} />
+        <div ref={progressRef} className={`h-full bg-gradient-to-r ${archetype.gradient}`}
+          style={{ width: "0%", transition: "width 0.1s linear" }} />
       </div>
 
       {/* ── Sticky Mini Header ── */}
