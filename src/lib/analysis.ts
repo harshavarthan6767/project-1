@@ -166,6 +166,47 @@ function generateSummary(archetype: Archetype, traits: Record<string, number>): 
   return parts.join(" ");
 }
 
+function estimateFromGenres(artists: SpotifyArtist[]): {
+  energy: number; danceability: number; valence: number; tempo: number;
+} {
+  const highEnergy = new Set(["edm", "dance", "electronic", "house", "techno", "drum-and-bass", "dubstep", "hardstyle", "trance", "party", "club", "pop", "hip-hop", "rap", "trap", "rock", "metal", "punk", "hardcore", "heavy-metal", "death-metal", "industrial", "grime", "drill", "dancehall", "reggaeton", "funk", "disco", "samba"]);
+  const lowEnergy = new Set(["ambient", "classical", "acoustic", "lo-fi", "chill", "folk", "singer-songwriter", "piano", "orchestra", "new-age", "meditation", "sleep", "downtempo", "trip-hop", "shoegaze", "dream-pop", "slowcore"]);
+  const happyGenres = new Set(["pop", "dance", "disco", "funk", "reggae", "latin", "afrobeats", "samba", "salsa", "k-pop", "j-pop", "indie-pop", "synth-pop", "bubblegum", "soca", "calypso"]);
+  const sadGenres = new Set(["blues", "emo", "post-rock", "sad", "dark-ambient", "doom-metal", "gothic", "slowcore", "breakup", "melancholy"]);
+  const highDance = new Set(["dance", "disco", "funk", "house", "techno", "afrobeats", "latin", "reggaeton", "salsa", "samba", "dancehall", "drum-and-bass", "edm", "club", "party", "tropical", "merengue", "bhangra", "soca"]);
+  const fastTempo = new Set(["drum-and-bass", "punk", "hardcore", "metal", "speed-metal", "techno", "grime", "drill", "samba", "happy-hardcore", "gabber", "thrash"]);
+  const slowTempo = new Set(["ambient", "drone", "doom-metal", "classical", "orchestra", "piano", "ballad", "slow-jam", "r-b", "soul", "blues", "lo-fi", "chill"]);
+
+  let eCount = 0, eTotal = 0;
+  let dCount = 0, dTotal = 0;
+  let vCount = 0, vTotal = 0;
+  let tCount = 0, tTotal = 0;
+
+  artists.forEach((a) => {
+    const genres = (a.genres || []).map((g) => g.toLowerCase());
+    genres.forEach((g) => {
+      if (highEnergy.has(g)) { eTotal += 80; eCount++; }
+      else if (lowEnergy.has(g)) { eTotal += 25; eCount++; }
+      if (highDance.has(g)) { dTotal += 80; dCount++; }
+      if (happyGenres.has(g)) { vTotal += 75; vCount++; }
+      else if (sadGenres.has(g)) { vTotal += 25; vCount++; }
+      if (fastTempo.has(g)) { tTotal += 140; tCount++; }
+      else if (slowTempo.has(g)) { tTotal += 75; tCount++; }
+    });
+  });
+
+  const popBoost = artists.length > 0
+    ? Math.round(artists.reduce((s, a) => s + a.popularity, 0) / artists.length)
+    : 50;
+
+  return {
+    energy: eCount > 0 ? Math.round(eTotal / eCount) : Math.round(30 + popBoost * 0.5),
+    danceability: dCount > 0 ? Math.round(dTotal / dCount) : Math.round(35 + popBoost * 0.45),
+    valence: vCount > 0 ? Math.round(vTotal / vCount) : Math.round(40 + popBoost * 0.4),
+    tempo: tCount > 0 ? Math.round(tTotal / tCount) : Math.round(90 + popBoost * 0.5),
+  };
+}
+
 export function analyzeMusicProfile(
   artists: SpotifyArtist[],
   tracks: SpotifyTrack[],
@@ -175,21 +216,24 @@ export function analyzeMusicProfile(
   const archetype = findBestArchetype(traits);
 
   const validFeatures = features.filter((f) => f !== null);
+  const hasAudioFeatures = validFeatures.length > 0;
+  const estimates = hasAudioFeatures ? null : estimateFromGenres(artists);
+
   const avgPopularity = artists.length > 0
     ? Math.round(artists.reduce((s, a) => s + a.popularity, 0) / artists.length)
     : 0;
-  const avgEnergy = validFeatures.length > 0
+  const avgEnergy = hasAudioFeatures
     ? Math.round((validFeatures.reduce((s, f) => s + f.energy, 0) / validFeatures.length) * 100)
-    : 0;
-  const avgDanceability = validFeatures.length > 0
+    : (estimates?.energy ?? 50);
+  const avgDanceability = hasAudioFeatures
     ? Math.round((validFeatures.reduce((s, f) => s + f.danceability, 0) / validFeatures.length) * 100)
-    : 0;
-  const avgValence = validFeatures.length > 0
+    : (estimates?.danceability ?? 50);
+  const avgValence = hasAudioFeatures
     ? Math.round((validFeatures.reduce((s, f) => s + f.valence, 0) / validFeatures.length) * 100)
-    : 0;
-  const avgTempo = validFeatures.length > 0
+    : (estimates?.valence ?? 50);
+  const avgTempo = hasAudioFeatures
     ? Math.round(validFeatures.reduce((s, f) => s + f.tempo, 0) / validFeatures.length)
-    : 0;
+    : (estimates?.tempo ?? 120);
 
   const allGenres = new Set<string>();
   artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
