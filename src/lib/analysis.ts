@@ -13,6 +13,7 @@ export interface AnalysisResult {
     mood: number; bpm: number; topDecade: string; genreCount: number;
   };
   summary: string;
+  userName?: string;
 }
 
 function clamp(v: number) { return Math.max(0, Math.min(100, Math.round(v))); }

@@ -6,10 +6,11 @@ import type { AnalysisResult } from "@/lib/analysis";
 
 interface Props {
   data: AnalysisResult;
+  userName?: string;
   showExport?: boolean;
 }
 
-export default function PersonalityCard({ data, showExport = true }: Props) {
+export default function PersonalityCard({ data, userName, showExport = true }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
@@ -26,36 +27,45 @@ export default function PersonalityCard({ data, showExport = true }: Props) {
     setExporting(true);
     try {
       const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#0a0a0a",
+        cacheBust: true, pixelRatio: 2, backgroundColor: "#0a0a0a",
       });
       const link = document.createElement("a");
       link.download = `music-personality-${archetype.id}.png`;
-      link.href = dataUrl;
-      link.click();
+      link.href = dataUrl; link.click();
       setExported(true);
       setTimeout(() => setExported(false), 2000);
-    } catch {
-      // Fallback for browsers where html-to-image fails
-    } finally {
-      setExporting(false);
-    }
+    } catch { /* fallback */ } finally { setExporting(false); }
   };
 
   return (
     <div>
-      {/* Card */}
+      {/* Card with metallic gradient border */}
       <div
         ref={cardRef}
-        className={`rounded-2xl bg-gradient-to-br ${archetype.gradient} p-[1.5px] shadow-2xl`}
+        className="rounded-2xl p-[1.5px] shadow-2xl relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg,
+            rgba(255,255,255,0.15) 0%,
+            ${archetype.id === "party-starter" ? "#f97316" : archetype.id === "late-night-feels" ? "#818cf8" : archetype.id === "hype-beast" ? "#ef4444" : archetype.id === "classic-soul" ? "#d97706" : archetype.id === "explorer" ? "#10b981" : archetype.id === "stan" ? "#ec4899" : archetype.id === "chill-vibes" ? "#0891b2" : "#8b5cf6"} 30%,
+            rgba(255,255,255,0.1) 50%,
+            ${archetype.id === "party-starter" ? "#f43f5e" : archetype.id === "late-night-feels" ? "#6366f1" : archetype.id === "hype-beast" ? "#f97316" : archetype.id === "classic-soul" ? "#b45309" : archetype.id === "explorer" ? "#059669" : archetype.id === "stan" ? "#db2777" : archetype.id === "chill-vibes" ? "#0e7490" : "#7c3aed"} 70%,
+            rgba(255,255,255,0.05) 100%
+          )`,
+        }}
       >
         <div className="bg-[#0c0c0c] rounded-2xl px-6 py-7 space-y-5">
-          {/* Header */}
+          {/* User name */}
+          {userName && (
+            <p className="text-center text-xs text-zinc-500 uppercase tracking-[0.2em]">{userName}</p>
+          )}
+
+          {/* Archetype label + name */}
           <div className="text-center">
             <p className="text-[10px] uppercase tracking-[0.25em] text-zinc-500 mb-2">{archetype.label}</p>
-            <h3 className={`text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${archetype.gradient}`}
-              style={{ fontFamily: "var(--font-righteous)" }}>
+            <h3
+              className={`text-3xl font-bold bg-gradient-to-r bg-clip-text text-transparent ${archetype.gradient}`}
+              style={{ fontFamily: "var(--font-righteous)" }}
+            >
               {archetype.name}
             </h3>
           </div>
@@ -67,7 +77,7 @@ export default function PersonalityCard({ data, showExport = true }: Props) {
             </p>
           )}
 
-          {/* Trait bars (compact) */}
+          {/* Trait bars */}
           <div className="space-y-2">
             {Object.entries(traits).map(([key, value]) => {
               const colors: Record<string, string> = {
@@ -113,27 +123,17 @@ export default function PersonalityCard({ data, showExport = true }: Props) {
       {/* Export button */}
       {showExport && (
         <button
-          onClick={handleExport}
-          disabled={exporting}
+          onClick={handleExport} disabled={exporting}
           className="mt-4 w-full py-3 rounded-full bg-white/[0.04] border border-white/10 text-white text-sm font-medium
                      hover:bg-white/[0.08] hover:border-white/20 transition-all active:scale-[0.98]
                      disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {exporting ? (
-            <>
-              <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              Saving...
-            </>
+            <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Saving...</>
           ) : exported ? (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              Downloaded
-            </>
+            <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Downloaded</>
           ) : (
-            <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              Save as Image
-            </>
+            <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Save as Image</>
           )}
         </button>
       )}

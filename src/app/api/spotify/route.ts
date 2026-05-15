@@ -3,6 +3,7 @@ import {
   getTopArtists,
   getTopTracks,
   getAudioFeatures,
+  getUserProfile,
   refreshAccessToken,
 } from "@/lib/spotify";
 import { analyzeMusicProfile } from "@/lib/analysis";
@@ -57,8 +58,15 @@ export async function GET(request: NextRequest) {
       // Non-fatal — analysis falls back to genre estimates
     }
 
+    // Get user display name
+    let userName = "";
+    try {
+      const profile = await getUserProfile(token);
+      userName = profile.display_name || "";
+    } catch { /* non-critical */ }
+
     const result = analyzeMusicProfile(artists, tracks, features);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, userName });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

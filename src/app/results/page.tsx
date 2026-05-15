@@ -136,9 +136,20 @@ export default function ResultsPage() {
 
   const { archetype, traits, topArtists, topTracks, topGenres, stats } = data;
   const vibe = getVibeCheck(archetype);
+  const userName = data.userName || "";
+
+  // Subtle page background tint from archetype color
+  const bgTint = archetype.id === "party-starter" ? "from-[#0a0a0a] via-[#1a0f08] to-[#0a0a0a]" :
+    archetype.id === "late-night-feels" ? "from-[#0a0a0a] via-[#0f0a1e] to-[#0a0a0a]" :
+    archetype.id === "hype-beast" ? "from-[#0a0a0a] via-[#1a0808] to-[#0a0a0a]" :
+    archetype.id === "classic-soul" ? "from-[#0a0a0a] via-[#140e06] to-[#0a0a0a]" :
+    archetype.id === "explorer" ? "from-[#0a0a0a] via-[#081a14] to-[#0a0a0a]" :
+    archetype.id === "stan" ? "from-[#0a0a0a] via-[#1a0816] to-[#0a0a0a]" :
+    archetype.id === "chill-vibes" ? "from-[#0a0a0a] via-[#08141a] to-[#0a0a0a]" :
+    "from-[#0a0a0a] via-[#10081e] to-[#0a0a0a]";
 
   return (
-    <div className="bg-[#0a0a0a]">
+    <div className={`bg-gradient-to-b ${bgTint}`}>
       {/* ── Scroll Progress Bar ── */}
       <div className="fixed top-0 left-0 right-0 h-[2px] z-50 bg-white/[0.03]">
         <div className={`h-full bg-gradient-to-r ${archetype.gradient} transition-all duration-150`}
@@ -354,7 +365,7 @@ export default function ResultsPage() {
           </h2>
           <p className="text-zinc-500 text-sm mt-2">Save and post it anywhere</p>
         </div>
-        <PersonalityCard data={data} />
+        <PersonalityCard data={data} userName={userName} />
       </Section>
 
       {/* ═══ FOOTER ═══ */}
