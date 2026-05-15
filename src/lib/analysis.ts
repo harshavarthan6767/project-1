@@ -5,7 +5,7 @@ export interface AnalysisResult {
   archetype: Archetype;
   traits: Record<string, number>;
   topArtists: { name: string; image: string; genres: string[] }[];
-  topTracks: { name: string; artist: string; image: string }[];
+  topTracks: { name: string; artist: string; image: string; id: string }[];
   topGenres: { name: string; count: number }[];
   stats: {
     totalArtists: number; totalTracks: number;
@@ -225,7 +225,7 @@ export function analyzeMusicProfile(
       name: a.name || "Unknown", image: a.images?.[0]?.url || "", genres: (a.genres || []).slice(0, 3),
     })),
     topTracks: tracks.slice(0, 5).map((t) => ({
-      name: t.name || "Unknown", artist: t.artists?.[0]?.name || "", image: t.album?.images?.[0]?.url || "",
+      id: t.id, name: t.name || "Unknown", artist: t.artists?.[0]?.name || "", image: t.album?.images?.[0]?.url || "",
     })),
     topGenres: getTopGenres(artists),
     stats: {

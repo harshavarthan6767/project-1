@@ -346,6 +346,34 @@ export default function ResultsPage() {
 
       <DiagonalDivider />
 
+      {/* ═══ SPOTIFY PLAYERS ═══ */}
+      <Section className="max-w-2xl mx-auto px-6 py-20">
+        <div className="mb-8">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-zinc-500 mb-3">Listen Now</p>
+          <h2 className="text-4xl sm:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-righteous)" }}>
+            Press Play
+          </h2>
+        </div>
+        <div className="space-y-3">
+          {data.topTracks.map((track) => (
+            <div key={track.id} className="card-glass overflow-hidden">
+              <iframe
+                title={track.name}
+                src={`https://open.spotify.com/embed/track/${track.id}?utm_source=generator&theme=0`}
+                width="100%"
+                height="80"
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                className="w-full"
+              />
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <DiagonalDivider />
+
       {/* ═══ VIBE CHECK ═══ */}
       <Section className="max-w-2xl mx-auto px-6 py-20">
         <div className="mb-8">
