@@ -154,9 +154,7 @@ export default function ResultsPage() {
   const { archetype, traits, topArtists, topTracks, topGenres, stats } = data;
   const vibe = getVibeCheck(archetype, data);
   const userName = data.userName || "";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const aiGenres = ((data as unknown) as Record<string, unknown>).aiGenres as { name: string; count: number }[] | null;
-  const displayGenres = topGenres.length > 0 ? topGenres : (aiGenres || []);
+  const displayGenres = topGenres.length > 0 ? topGenres : (data.aiGenres || []);
 
   // Rich gradient colors per archetype
   const archColors: Record<string, { from: string; mid: string; to: string; blob1: string; blob2: string }> = {

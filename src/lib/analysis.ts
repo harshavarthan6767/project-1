@@ -14,6 +14,7 @@ export interface AnalysisResult {
   };
   summary: string;
   userName?: string;
+  aiGenres?: { name: string; count: number }[];
 }
 
 function clamp(v: number) { return Math.max(0, Math.min(100, Math.round(v))); }
