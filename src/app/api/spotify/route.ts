@@ -12,12 +12,10 @@ export async function GET(request: NextRequest) {
 
   let token = accessToken;
 
-  // Always refresh token to be safe (tokens are short-lived)
   try {
     const newTokens = await refreshAccessToken(refreshToken);
     token = newTokens.access_token;
   } catch {
-    // If refresh fails, try with existing token
     console.log("Token refresh failed, trying existing token");
   }
 
@@ -33,14 +31,16 @@ export async function GET(request: NextRequest) {
 
     const trackIds = tracks.map((t) => t.id);
     let features: Awaited<ReturnType<typeof getAudioFeatures>> = [];
+    let audioWarning: string | null = null;
     try {
       features = await getAudioFeatures(token, trackIds);
-    } catch {
-      // Audio features may fail — continue without them
+    } catch (err) {
+      audioWarning = err instanceof Error ? err.message : "Audio features unavailable";
+      console.error("Audio features error:", audioWarning);
     }
 
     const result = analyzeMusicProfile(artists, tracks, features);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, _warning: audioWarning });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Spotify analysis error:", message);

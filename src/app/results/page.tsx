@@ -4,8 +4,10 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { AnalysisResult } from "@/lib/analysis";
 import { TRAITS } from "@/lib/archetypes";
+import { getVibeCheck } from "@/lib/slang";
 import PersonalityCard from "@/components/PersonalityCard";
 import TraitBar from "@/components/TraitBar";
+import VibeCheckSection from "@/components/VibeCheck";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -97,6 +99,9 @@ export default function ResultsPage() {
           </div>
         </div>
       </section>
+
+      {/* Vibe Check */}
+      <VibeCheckSection data={data} />
 
       {/* Trait Breakdown */}
       <section className="max-w-2xl mx-auto px-6 py-20">
