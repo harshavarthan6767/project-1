@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #0a0a0a;
+  --color-surface: #141414;
+  --color-surface-elevated: #1e1e1e;
+  --color-surface-highlight: #282828;
+  --color-foreground: #fafafa;
+  --color-foreground-muted: #a1a1aa;
+  --color-primary: #1db954;
+  --color-primary-glow: rgba(29, 185, 84, 0.3);
+  --color-accent-purple: #a78bfa;
+  --color-accent-pink: #f472b6;
+  --color-accent-cyan: #22d3ee;
+  --color-accent-orange: #fb923c;
+  --color-accent-amber: #fbbf24;
+  --color-border: rgba(255, 255, 255, 0.08);
+}
+
+body {
+  background: #0a0a0a;
+  color: #fafafa;
+  font-family: var(--font-poppins), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #1db954, #a78bfa, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, #fb923c, #f472b6, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.animated-gradient {
+  background: linear-gradient(
+    135deg,
+    #0a0a0a 0%,
+    #1a0a2e 25%,
+    #0a1a1a 50%,
+    #1a0a1a 75%,
+    #0a0a0a 100%
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.glow-green {
+  box-shadow: 0 0 40px rgba(29, 185, 84, 0.15), 0 0 80px rgba(29, 185, 84, 0.05);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.card-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+.animate-fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.animate-fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.animate-fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.animate-fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; }
+.animate-fade-up-delay-5 { animation-delay: 0.5s; opacity: 0; }
+
+.spotify-btn {
+  background: #1db954;
+  color: #000;
+  font-weight: 600;
+  border-radius: 9999px;
+  padding: 14px 32px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.spotify-btn:hover {
+  background: #1ed760;
+  transform: scale(1.03);
+  box-shadow: 0 0 30px rgba(29, 185, 84, 0.3);
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
