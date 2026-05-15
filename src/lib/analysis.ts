@@ -41,7 +41,7 @@ function computeTraits(
 
   // Curiosity: genre diversity
   const allGenres = new Set<string>();
-  artists.forEach((a) => a.genres.forEach((g) => allGenres.add(g)));
+  artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
   const genreDiversity = allGenres.size;
   const curiosity = Math.min(100, Math.round(genreDiversity * 3.5));
 
@@ -128,7 +128,7 @@ function getTopDecade(tracks: SpotifyTrack[]): string {
 function getTopGenres(artists: SpotifyArtist[]): { name: string; count: number }[] {
   const genreCount: Record<string, number> = {};
   artists.forEach((a) => {
-    a.genres.forEach((g) => {
+    (a.genres || []).forEach((g) => {
       genreCount[g] = (genreCount[g] || 0) + 1;
     });
   });
@@ -192,7 +192,7 @@ export function analyzeMusicProfile(
     : 0;
 
   const allGenres = new Set<string>();
-  artists.forEach((a) => a.genres.forEach((g) => allGenres.add(g)));
+  artists.forEach((a) => (a.genres || []).forEach((g) => allGenres.add(g)));
 
   return {
     archetype,
@@ -200,7 +200,7 @@ export function analyzeMusicProfile(
     topArtists: artists.slice(0, 5).map((a) => ({
       name: a.name,
       image: a.images[0]?.url || "",
-      genres: a.genres.slice(0, 3),
+      genres: (a.genres || []).slice(0, 3),
     })),
     topTracks: tracks.slice(0, 5).map((t) => ({
       name: t.name,
